@@ -1,12 +1,10 @@
 """QuantRoadmap SYSTEM laptop companion."""
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import streamlit as st
-from laptop.model import eligible, read_backup, safe_url
-from laptop.sync import request as sync_request, command as sync_command, SyncError
+from laptop.model import study_units, safe_url
 from laptop.design import apply as apply_design, hero
 
 ROOT = Path(__file__).resolve().parent
@@ -18,58 +16,6 @@ with st.sidebar:
     st.header("Study desk")
     page = st.radio("Open", ["Study quests", "Resource library", "Four-year roadmap", "NTU timetable", "Projects", "Computing strategy"])
     track = st.selectbox("Track", ["engineering", "low_latency", "research_engineering", "commodities", "research"])
-    upload = st.file_uploader("Android JSON backup (optional)", type=["json"])
-    st.caption("Read-only import. No live sync. Uploads stay in this server session; do not use a shared public session for private data.")
-state = {}
-if upload:
-    try:
-        state = read_backup(upload.getvalue())
-    except (ValueError, TypeError, KeyError) as exc:
-        st.error(str(exc))
-        st.stop()
-if os.environ.get("SYSTEM_LAN_SYNC") == "1":
-    with st.sidebar:
-        st.subheader("Live phone connection")
-        host = st.text_input("Phone Wi-Fi IP")
-        pin = st.text_input("Certificate SHA-256")
-        token = st.text_input("Pairing token", type="password")
-        if st.button("Connect / refresh"):
-            try:
-                st.session_state.phone = sync_request(host, pin, token)
-                st.session_state.pair = (host, pin, token)
-                st.session_state.connected = True
-            except (SyncError, OSError, ValueError) as exc:
-                st.error(str(exc))
-        if st.button("Disconnect"):
-            for key in ("phone", "pair", "connected", "pending_sync"):
-                st.session_state.pop(key, None)
-        if st.session_state.get("pending_sync") and st.session_state.get("connected"):
-            if st.button("Retry last unconfirmed update"):
-                try:
-                    st.session_state.phone = sync_request(*st.session_state.pair, command=st.session_state.pending_sync)
-                    st.session_state.pop("pending_sync", None)
-                    st.rerun()
-                except (SyncError, OSError, ValueError) as exc:
-                    st.error(str(exc))
-    @st.fragment(run_every="10s")
-    def poll_phone():
-        if not st.session_state.get("connected"):
-            return
-        try:
-            fresh = sync_request(*st.session_state.pair)
-            st.caption("Phone connected · refresh every 10 seconds")
-            if fresh["revision"] != st.session_state.phone["revision"]:
-                st.session_state.phone = fresh
-                st.rerun()
-        except (SyncError, OSError, ValueError):
-            st.warning("Phone offline. Last snapshot shown; reconnect before editing.")
-    with st.sidebar:
-        poll_phone()
-    if st.session_state.get("phone"):
-        state = st.session_state.phone["state"]
-else:
-    st.sidebar.caption("For live Wi-Fi sync, run python run_laptop.py on your laptop.")
-career = state.get("career", {})
 hero(catalog, page, track, datetime.now(ZoneInfo("Asia/Singapore")).strftime("%d %b %Y"))
 
 def link(label, url):
@@ -88,27 +34,21 @@ def resource(r):
 
 if page == "Study quests":
     st.subheader("Choose your next study session")
-    st.info("Import your latest Android backup to use recorded progress. Without one, this shows foundation sessions. Completion and scheduling remain in the Android app.")
-    tasks = [t for t in state.get("tasks", []) if isinstance(t, dict) and t.get("careerUnit") and not t.get("done")]
-    units = {u["id"]: u for u in catalog["units"]}
-    planned = [(t, units[t["careerUnit"]]) for t in tasks if t["careerUnit"] in units]
-    if planned:
-        st.markdown("### Planned on your phone")
-        for t, u in planned:
-            with st.expander(str(t.get("date", "")) + " · " + t.get("title", u["title"])):
-                st.write(u["assignment"])
-                resource(resources[u["resource"]])
+    st.caption("Browse sessions by track and topic. Open the source material, follow the assignment and keep evidence of your work.")
+    skills = {s["id"]: s for s in catalog["skills"]}
+    options = study_units(catalog, track)
+    topics = list(dict.fromkeys(u["skill"] for u in options))
+    topic = st.selectbox("Study topic", topics, format_func=lambda key: skills[key]["title"])
+    options = [u for u in options if u["skill"] == topic]
+    prerequisites = skills[topic]["prerequisites"]
+    if prerequisites:
+        st.caption("Recommended prerequisites: " + ", ".join(skills[key]["title"] for key in prerequisites))
     budget = st.slider("Study budget (minutes)", 15, 120, 120, 15)
-    options = eligible(catalog, career, track)
-    shown = set()
-    for u in options:
-        if u["skill"] in shown:
-            continue
-        shown.add(u["skill"])
-        if len(shown) % 2:
+    for index, u in enumerate(options):
+        if index % 2 == 0:
             quest_columns = st.columns(2, gap="large")
-        with quest_columns[(len(shown) - 1) % 2], st.container(border=True, key="quest_" + u["id"]):
-            st.html(f'<div class="quest-index">SESSION {len(shown):02} / {u["skill"].upper()}</div>')
+        with quest_columns[index % 2], st.container(border=True, key="quest_" + u["id"]):
+            st.html(f'<div class="quest-index">SESSION {index + 1:02} / {u["skill"].upper()}</div>')
             st.markdown("### " + u["title"])
             st.caption(f'{min(budget, u["minutes"])} min suggested · full session {u["minutes"]} min · {u["id"]}')
             if budget < u["minutes"]:
@@ -120,26 +60,7 @@ if page == "Study quests":
             section = u.get("section", 0)
             if isinstance(section, int) and 1 <= section <= len(r.get("sections", [])):
                 st.write("Section: " + r["sections"][section - 1]["title"])
-            st.caption("Evidence: " + u.get("evidence", "Record your independent work in Android."))
-            if st.session_state.get("connected"):
-                with st.form("complete_" + u["id"]):
-                    evidence = st.text_input("Your work / commit / solution", key="evidence_" + u["id"])
-                    note = st.text_area("Notes and hints used", key="note_" + u["id"])
-                    help_used = st.selectbox("Assistance used", ["None", "Hints", "AI assistance", "Worked solution"], key="help_" + u["id"])
-                    if st.form_submit_button("Record completion on phone"):
-                        try:
-                            # Use the revision of the displayed snapshot; do not silently
-                            # rebase a write over concurrent phone edits.
-                            cmd = sync_command(st.session_state.phone["revision"], "career.unit",
-                                               {"id": u["id"], "done": True, "evidence": evidence, "note": note, "help": help_used})
-                            st.session_state.pending_sync = cmd
-                            st.session_state.phone = sync_request(*st.session_state.pair, command=cmd)
-                            st.session_state.pop("pending_sync", None)
-                            st.rerun()
-                        except (SyncError, OSError, ValueError) as exc:
-                            st.error(str(exc))
-    if not shown:
-        st.info("No unlocked new sessions. Review completed material or record prerequisite skill assessments on your phone.")
+            st.caption("Evidence: " + u.get("evidence", "Keep a record of your independent work."))
 elif page == "Resource library":
     st.subheader("All study material")
     query = st.text_input("Search titles, authors, topics or modules").casefold()
@@ -219,3 +140,4 @@ else:
         st.json(strategy, expanded=False)
 st.divider()
 st.caption("Shared catalogue " + catalog["version"] + " · Source checks recorded " + catalog["verified"] + " · Links open the original provider; some materials require purchase or university access.")
+

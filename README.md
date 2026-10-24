@@ -1,15 +1,11 @@
-# SYSTEM laptop study desk
+# QuantRoadmap · SYSTEM study site
 
-Streamlit companion for QuantRoadmap: study quests and source links, searchable learning library, four-year plan, provisional NTU timetable, project briefs and computing strategy.
+Open [the Streamlit site](https://quantroadmap-system.streamlit.app/) in your browser. No phone pairing or laptop script is needed.
 
-## Local Wi-Fi sync
+Browse study sessions by track and topic, search learning resources, read the 2026–2030 quant roadmap, inspect the provisional NTU course plan, and review project briefs and computing strategy.
 
-Install Python 3.11 or newer, download/extract the repository ZIP and double-click Start_SYSTEM.cmd on Windows. Alternatively install requirements and run `python run_laptop.py`.
+The website is read-only and independent of the Android app. It does not accept phone backups or record personal progress. The Modern Dark interface and shared study catalogue are preserved.
 
-The updated Android SYSTEM Sync launcher provides the phone IP, certificate fingerprint and pairing token. Keep both devices on the same trusted Wi-Fi. The phone is the authoritative progress database. See [setup](LAPTOP_SETUP.txt) and [sync design](docs/lan-sync.md).
+For optional local development, install Python 3.11+, run `python -m pip install -r requirements.txt`, then `python run_laptop.py`.
 
-## Hosted view
-
-Deploy streamlit_app.py on Streamlit Community Cloud. Hosted mode is a roadmap viewer; it cannot reach your private phone network. Use local mode for live study progress and completion. No phone credentials or personal backups are included in this repository.
-
-The Android source and signing infrastructure remain in the private QuantRoadmap repository. This repository contains only the companion source and shared study catalogue.
+See [setup and deployment](docs/laptop-companion.md). Run `python -m unittest discover -s tests -p test_laptop.py -v` to check the site.
