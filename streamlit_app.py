@@ -186,6 +186,36 @@ elif page == "Projects":
                 st.write(m["deliverable"])
 else:
     st.subheader("Laptop, campus computing and storage")
-    st.json(catalog.get("computingStrategy", {}), expanded=True)
+    strategy = catalog.get("computingStrategy", {})
+    st.write(strategy.get("decision", ""))
+    st.caption("Reviewed " + strategy.get("reviewed", ""))
+    computer = strategy.get("computer", {})
+    with st.container(border=True):
+        st.markdown("### " + computer.get("name", "Computer"))
+        st.dataframe([{"Component": k.upper(), "Specification": computer[k]}
+                      for k in ("cpu", "memory", "storage", "gpu", "npu", "display") if k in computer],
+                     hide_index=True, width="stretch")
+        for item in computer.get("bestFor", []):
+            st.markdown("- " + item)
+        st.caption(computer.get("limits", ""))
+    for facility in strategy.get("facilities", []):
+        with st.expander(facility["title"]):
+            st.write(facility.get("purpose", ""))
+            for key in ("verification", "guardrails", "workflow"):
+                st.markdown("**" + key.title() + "**")
+                st.write(facility.get(key, ""))
+            for item in facility.get("checklist", []):
+                st.markdown("- " + item)
+    st.markdown("### Purchase gates")
+    for item in strategy.get("purchaseGates", []):
+        st.markdown("- " + item)
+    st.markdown("### Semester approach")
+    for item in strategy.get("semesterApproach", []):
+        st.markdown("**" + item["period"] + "**")
+        st.write(item["approach"])
+    for source in strategy.get("sources", []):
+        st.caption(source)
+    with st.expander("Full computing strategy record"):
+        st.json(strategy, expanded=False)
 st.divider()
 st.caption("Shared catalogue " + catalog["version"] + " · Source checks recorded " + catalog["verified"] + " · Links open the original provider; some materials require purchase or university access.")
