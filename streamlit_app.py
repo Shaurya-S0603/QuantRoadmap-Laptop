@@ -12,8 +12,6 @@ from laptop.design import apply as apply_design, hero
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title="SYSTEM · QuantRoadmap", page_icon="⚔️", layout="wide")
 apply_design()
-if st.query_params.get("_layout_check") == "390":
-    st.html('<style>.stMainBlockContainer{max-width:390px!important;padding-left:20px!important;padding-right:20px!important}</style>')
 catalog = json.loads((ROOT / "data/career_catalog.json").read_text())
 resources = {r["id"]: r for r in catalog["resources"]}
 with st.sidebar:
