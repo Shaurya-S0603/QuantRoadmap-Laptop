@@ -7,13 +7,13 @@ from zoneinfo import ZoneInfo
 import streamlit as st
 from laptop.model import eligible, read_backup, safe_url
 from laptop.sync import request as sync_request, command as sync_command, SyncError
+from laptop.design import apply as apply_design, hero
 
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(page_title="SYSTEM · QuantRoadmap", page_icon="⚔️", layout="wide")
+apply_design()
 catalog = json.loads((ROOT / "data/career_catalog.json").read_text())
 resources = {r["id"]: r for r in catalog["resources"]}
-st.title("SYSTEM · QuantRoadmap")
-st.caption("Your laptop study desk · " + datetime.now(ZoneInfo("Asia/Singapore")).strftime("%d %b %Y · Singapore"))
 with st.sidebar:
     st.header("Study desk")
     page = st.radio("Open", ["Study quests", "Resource library", "Four-year roadmap", "NTU timetable", "Projects", "Computing strategy"])
@@ -63,12 +63,14 @@ if os.environ.get("SYSTEM_LAN_SYNC") == "1":
                 st.rerun()
         except (SyncError, OSError, ValueError):
             st.warning("Phone offline. Last snapshot shown; reconnect before editing.")
-    poll_phone()
+    with st.sidebar:
+        poll_phone()
     if st.session_state.get("phone"):
         state = st.session_state.phone["state"]
 else:
     st.sidebar.caption("For live Wi-Fi sync, run python run_laptop.py on your laptop.")
 career = state.get("career", {})
+hero(catalog, page, track, datetime.now(ZoneInfo("Asia/Singapore")).strftime("%d %b %Y"))
 
 def link(label, url):
     if safe_url(url):
@@ -103,7 +105,10 @@ if page == "Study quests":
         if u["skill"] in shown:
             continue
         shown.add(u["skill"])
-        with st.container(border=True):
+        if len(shown) % 2:
+            quest_columns = st.columns(2, gap="large")
+        with quest_columns[(len(shown) - 1) % 2], st.container(border=True, key="quest_" + u["id"]):
+            st.html(f'<div class="quest-index">SESSION {len(shown):02} / {u["skill"].upper()}</div>')
             st.markdown("### " + u["title"])
             st.caption(f'{min(budget, u["minutes"])} min suggested · full session {u["minutes"]} min · {u["id"]}')
             if budget < u["minutes"]:
@@ -164,7 +169,7 @@ elif page == "NTU timetable":
         rows = [m for m in catalog["modules"] if m["semester"] == semester]
         if rows:
             with st.expander(f'{semester} · {sum(m["au"] for m in rows)} AU'):
-                st.dataframe([{k: m.get(k, "") for k in ("code", "title", "au", "status", "dependency")} for m in rows], hide_index=True, use_container_width=True)
+                st.dataframe([{k: m.get(k, "") for k in ("code", "title", "au", "status", "dependency")} for m in rows], hide_index=True, width="stretch")
     for gate in catalog["gates"]:
         with st.expander(gate["title"]):
             st.write(gate["issue"])
