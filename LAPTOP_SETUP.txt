@@ -1,0 +1,35 @@
+SYSTEM Laptop Companion v0.12
+
+WINDOWS
+1. Install Python 3.11 or newer if needed.
+2. Extract this entire ZIP into a normal folder.
+3. Double-click Start_SYSTEM.cmd. First launch needs internet to install Streamlit.
+4. The browser opens the local dashboard. Keep the command window open.
+
+PHONE
+1. Export a backup from your existing SYSTEM app.
+2. Install QuantSystem-0.12.0.apk over the existing app. Do not uninstall first.
+3. Open the new SYSTEM Sync launcher alongside the regular SYSTEM launcher.
+4. Join the same Wi-Fi as your laptop.
+5. Tap Show pairing details and Enable Wi-Fi sync.
+6. In the laptop sidebar, enter the phone IP, certificate SHA-256 and pairing
+   token exactly as shown. Click Connect / refresh.
+
+The phone remains the main database. Changes appear within about 10 seconds
+while the laptop page is open. Study completion entered on the laptop is sent
+to the phone and checked using the same evidence/prerequisite rules.
+
+The hosted website is a separate roadmap viewer. For Wi-Fi sync, use the local
+dashboard started by Start_SYSTEM.cmd, not the hosted URL.
+
+If the phone IP changes, stop/restart sync and reconnect with its new IP.
+Campus Wi-Fi may isolate devices; use a trusted private network if necessary.
+Re-enable phone sync after reboot. Android battery management can pause it;
+24/7 availability is not guaranteed.
+
+MAC / LINUX
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python run_laptop.py
+
+See docs/lan-sync.md for protocol details and verification limits.
