@@ -31,6 +31,9 @@ a:hover{text-decoration:underline;text-underline-offset:4px}
 [data-testid="stAlert"]{background:#101010!important;color:var(--dp-color-read)!important;border:1px solid var(--dp-color-hairline)!important;border-radius:6px!important}
 [data-testid="stAlert"] p{font-size:.86rem}
 [data-testid="stAlert"] svg{color:var(--dp-color-meta)}
+[data-testid="stAlertContainer"]{background:#101010!important;color:var(--dp-color-read)!important}
+[data-testid^="stAlertContent"]{color:var(--dp-color-read)!important}
+[data-testid="stAlert"] p{color:var(--dp-color-read)!important}
 [data-testid="stVerticalBlockBorderWrapper"]:has(>.st-key-quest-card),.quest-card{border-color:var(--dp-color-hairline)!important}
 [class*="st-key-quest_"]{background:var(--dp-color-panel);border:1px solid var(--dp-color-hairline)!important;border-radius:6px;padding:1.6rem!important;margin-top:.3rem}
 [class*="st-key-quest_"] h3{font-size:1.4rem!important;min-height:3.5rem}

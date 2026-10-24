@@ -7,7 +7,7 @@ import streamlit as st
 HERE = Path(__file__).resolve().parent
 
 @st.cache_data
-def styles():
+def styles(version):
     css = (HERE / "modern_dark.css").read_text()
     for token, name in (("__GEIST__", "Geist.ttf"), ("__MONO__", "GeistMono.ttf")):
         data = base64.b64encode((HERE / "fonts" / name).read_bytes()).decode()
@@ -15,7 +15,8 @@ def styles():
     return css.replace('format("woff2")', 'format("truetype")').replace("font-weight:100 900", "font-weight:400")
 
 def apply():
-    st.html("<style>" + styles() + "</style>")
+    version = tuple((HERE / p).stat().st_mtime_ns for p in ("modern_dark.css", "fonts/Geist.ttf", "fonts/GeistMono.ttf"))
+    st.html("<style>" + styles(version) + "</style>")
 
 def hero(catalog, page, track, date):
     pages = ["Study quests", "Resource library", "Four-year roadmap", "NTU timetable", "Projects", "Computing strategy"]
