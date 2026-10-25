@@ -75,9 +75,13 @@ elif page == "Four-year roadmap":
     for m in catalog["milestones"]:
         with st.expander(m["semester"] + " · " + m["title"], expanded=True):
             st.caption(m["start"] + " → " + m["end"])
-            st.write(m["evidence"])
             plan = m.get("studyPlan", {})
-            st.write(plan.get("focus", ""))
+            seen = set()
+            for text in (m.get("evidence", ""), plan.get("focus", "")):
+                key = " ".join(text.split()).casefold()
+                if key and key not in seen:
+                    st.write(text)
+                    seen.add(key)
             for b in plan.get("books", []):
                 st.write(b["title"] + " · " + b.get("topics", ""))
                 if b.get("resourceId") in resources:
